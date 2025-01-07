@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Optimizer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            text-align: center;
+        }
+        .image-preview {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .image-preview img {
+            max-width: 200px;
+            height: auto;
+        }
+        .options {
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Image Optimizer</h1>
+    <p>Upload an image to optimize it if it's larger than 2MB.</p>
+
+    <input type="file" id="imageUpload" accept="image/*">
+    <p>Selected file: <span id="fileName">None</span></p>
+    <div id="feedback" style="color: red; margin-top: 10px;"></div>
+
+    <div class="image-preview" id="imagePreview"></div>
+
+    <div class="options" id="options" style="display: none;">
+        <p>Choose optimization level:</p>
+        <button onclick="optimizeImage(75)">75%</button>
+        <button onclick="optimizeImage(50)">50%</button>
+        <button onclick="optimizeImage(25)">25%</button>
+    </div>
+
+    <script>
+        const imageUpload = document.getElementById('imageUpload');
+        const feedback = document.getElementById('feedback');
+        const imagePreview = document.getElementById('imagePreview');
+        const options = document.getElementById('options');
+        const fileNameDisplay = document.getElementById('fileName');
+
+        let originalImage;
+
+        imageUpload.addEventListener('change', async (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            fileNameDisplay.textContent = file.name; // Display selected file name
+            feedback.textContent = '';
+            imagePreview.innerHTML = '';
+            options.style.display = 'none';
+
+            if (file.size > 2 * 1024 * 1024) {
+                feedback.textContent = 'Image is larger than 2MB. Please choose an optimization level.';
+                const reader = new FileReader();
+
+                reader.onload = (e) => {
+                    originalImage = e.target.result;
+                    const img = document.createElement('img');
+                    img.src = originalImage;
+                    imagePreview.appendChild(img);
+                    options.style.display = 'block';
+                };
+
+                reader.readAsDataURL(file);
+            } else {
+                feedback.textContent = 'Image size is acceptable, no optimization needed.';
+            }
+        });
+
+        async function optimizeImage(quality) {
+            const canvas = document.createElement('canvas');
+            const img = document.createElement('img');
+            img.src = originalImage;
+
+            img.onload = () => {
+                const ctx = canvas.getContext('2d');
+                canvas.width = img.width;
+                canvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+
+                const optimizedImage = canvas.toDataURL('image/jpeg', quality / 100);
+                const previewImg = document.createElement('img');
+                previewImg.src = optimizedImage;
+                previewImg.alt = `${quality}% Quality`;
+
+                const qualityContainer = document.createElement('div');
+                qualityContainer.innerHTML = `<p>${quality}% Quality</p>`;
+                qualityContainer.appendChild(previewImg);
+
+                imagePreview.innerHTML = '';
+                imagePreview.appendChild(qualityContainer);
+
+                const downloadLink = document.createElement('a');
+                downloadLink.href = optimizedImage;
+                downloadLink.download = `optimized-image-${quality}.jpg`;
+                downloadLink.textContent = `Download ${quality}% Quality Image`;
+                downloadLink.style.display = 'block';
+                downloadLink.style.marginTop = '10px';
+
+                qualityContainer.appendChild(downloadLink);
+            };
+        }
+    </script>
+</body>
+</html>
